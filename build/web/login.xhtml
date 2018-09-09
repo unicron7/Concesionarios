@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+    
+    <ui:composition template="/templates/basetemplate.xhtml">
+        <ui:define name="title">
+             <h:outputText value="Login Concesionarios"/>
+        </ui:define>
+        
+        <ui:define name="content">
+            
+            <h:form class="form-4">
+                <p:growl id="growl" showDetail="true"/>
+                
+                <blockquote>
+                    <p style="text-align: center;"><em>En esta secci&oacute;n usted puede realizar la solicitud de asignaci&oacute;n de un auditor t&eacute;cnico minero</em></p>
+                </blockquote>
+                
+                <p:panelGrid columns="2" styleClass="panel_grid_center_login">
+                    <f:facet name="header">
+                        <h:panelGroup style="text-align:center">
+                            <p:outputLabel value="Ingreso al Sistema"></p:outputLabel>
+                        </h:panelGroup>
+                    </f:facet>
+                    
+                    <p:outputLabel value="Usuario:"></p:outputLabel>
+                    <p:inputText size="30" value="#{loginMB.userName}"></p:inputText>
+                    <p:outputLabel value="Clave:"></p:outputLabel>
+                    <p:password size="30" value="#{loginMB.userPassword}"></p:password>
+                    
+                    <f:facet name="footer">
+                        <h:panelGroup style="display:block; text-align:center">
+                            <p:commandButton value="Ingresar" action="#{loginMB.loginAction()}" icon="ui-icon-unlocked" ajax="false"></p:commandButton>
+                        </h:panelGroup>
+                    </f:facet>
+                </p:panelGrid>
+                
+                <blockquote>
+                    <p style="text-align: center;">
+                        <strong>Nota:</strong> 
+                        <em>
+                            Debe ingresar utilizando la misma clave que utiliza en el Sistema de Gesti&oacute;n Minera, si aun no se ha registrado puede hacerlo en el siguiente enlace: 
+                            <a title="SGM" href="#{loginMB.sgmLink}" target="_blank">SGM-ARCOM</a><br />
+                        </em>
+                    </p>
+                </blockquote>
+            </h:form>
+            
+            <p:dialog header="#{notasMB.encabezado}" widgetVar="importantedlgwg" modal="true" width="400" height="200" resizable="false">
+                <p:spacer height="15"/>
+                <p:panelGrid styleClass="pgsinborde">
+                    <p:row>
+                        <p:column rowspan="2">
+                            <p:graphicImage width="50" height="50" value="./resources/images/nota-importante.png"/>
+                        </p:column>
+                        <p:column>
+                            <h:outputText value="#{notasMB.mensaje}"/>
+                        </p:column>
+                    </p:row>
+                    <p:row>
+                        <p:column>
+                            <h:outputText value="#{notasMB.submensaje}"/>
+                        </p:column>
+                    </p:row>
+                </p:panelGrid>
+            </p:dialog>
+        </ui:define>
+    </ui:composition>
+</html>
+

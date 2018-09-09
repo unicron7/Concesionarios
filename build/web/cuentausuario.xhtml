@@ -1,0 +1,542 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+    
+    <ui:composition template="/templates/basetemplate.xhtml">
+        <ui:define name="title">
+             <h:outputText value="Cuenta de usuario"/>
+        </ui:define>
+        
+        <ui:define name="content">
+            <p:growl id="growl" showDetail="true"/>
+            
+            <h:form id="auditorform">
+                <p:panelGrid columns="2" styleClass="panelwelcome" columnClasses="columnausr01, columnausr02">
+                    <p:column>
+                        <h4 class="welcomemsg">Bienvenid@: <p:outputLabel value="#{loginMB.usuario.nombre.toUpperCase()} #{loginMB.usuario.apellido.toUpperCase()}" styleClass="welcomemsg02"></p:outputLabel></h4>
+                    </p:column>
+                    
+                    <p:column>
+                        <p:commandButton id="dynaButton" value="Mi cuenta" type="button" icon="ui-icon-gear"/>
+                        <p:menu overlay="true" trigger="dynaButton" my="left top" at="left bottom">
+                            <p:menuitem value="Cerrar sesión" icon="ui-icon-extlink" action="#{loginMB.logoutAction()}"/>
+                        </p:menu>
+                    </p:column>
+                </p:panelGrid>
+                
+                <p:tabView id="tabulador" activeIndex="#{solicitudMB.activeTab}">
+                    <p:tab title="Solicitar Auditor">
+                        <f:facet name="title">
+                            <p:graphicImage value="./resources/images/solicitar-auditor-icon.png" width="25" height="25"/>
+                            <p:spacer width="10" height="10"/>
+                            <h:outputText value="Solicitar Auditor"/>
+                        </f:facet>
+                        
+                        <p:dataTable id="cmdt" var="cmin" value="#{solicitudMB.concesionesMineras}" 
+                                     paginator="true" rows="10"
+                             currentPageReportTemplate="Mostrando {startRecord}-{endRecord} de {totalRecords}"
+                             paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             rowsPerPageTemplate="5,10,15" paginatorPosition="bottom" styleClass="texto_tabla_pn" rowIndexVar="rowIndex" emptyMessage="No hay concesiones para asignar auditor">
+                            
+                            <p:column headerText="CÓDIGO CATASTRO" sortBy="#{cmin.codigo_arcom}" style="width:80px;text-align: center">
+                                <h:outputText  styleClass="texto_tabla_pn_codigo" value="#{cmin.codigo_arcom}" />
+                            </p:column>
+                            
+                            <p:column headerText="NOMBRE" sortBy="#{cmin.nombre_concesion}">
+                                <h:outputText value="#{cmin.nombre_concesion}"/>
+                            </p:column>
+                            
+                            <p:column headerText="TIPO MINERIA" sortBy="#{cmin.tipoMineria.nombre_tipo_mineria}">
+                                <h:outputText value="#{cmin.tipoMineria.nombre_tipo_mineria}"/>
+                            </p:column>
+                            
+                            <p:column headerText="ACCIÓN" style="width:85px;text-align: center">
+                                <p:commandButton action="#{solicitudMB.newSolicitudAction(rowIndex)}" value="Solicitar" icon="ui-icon-search" title="Asignar un auditor a esta concesion" ajax="false" update="auditorform :growl"></p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </p:tab>
+                    
+                    <p:tab title="Solicitudes Realizadas" rendered="false">
+                        <f:facet name="title">
+                            <p:graphicImage value="./resources/images/solicitud-icon.png" width="25" height="25"/>
+                            <p:spacer width="10" height="10"/>
+                            <h:outputText value="Solicitudes Realizadas"/>
+                        </f:facet>
+                        
+                        <p:dataTable id="solicituddt" var="solicitud" value="#{solicitudMB.solicitudes}" 
+                                     paginator="true" rows="10"
+                                     selectionMode="single" selection="#{solicitudMB.selectedSolicitud}" rowKey="#{solicitud.id}"
+                             currentPageReportTemplate="Mostrando {startRecord}-{endRecord} de {totalRecords}"
+                             paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             rowsPerPageTemplate="5,10,15" paginatorPosition="bottom" styleClass="texto_tabla_pn" rowIndexVar="rowIndex" emptyMessage="No hay solicitudes realizadas">
+                            
+                            <p:column headerText="SOLICITUD">
+                                <h:outputText value="#{solicitudMB.presentaSolicitud(solicitud)}"/>
+                            </p:column>
+                            
+                            <p:column headerText="TIPO DE AUDITORIA">
+                                <h:outputText value="#{catalogMB.obtenerCatalogoPorId(solicitud.tipoAuditoria).nombre}"/>
+                            </p:column>
+                            
+                            <p:column headerText="FECHA SOLICITUD" sortBy="#{solicitud.fechaSolicitud}" style="width:90px;text-align: center">
+                                <h:outputText value="#{solicitud.fechaSolicitud}"/>
+                            </p:column>
+                            
+                            <p:column headerText="ACCIÓN" style="width:85px;text-align: center">
+                                <p:commandButton id="viewsolicitudbtn" value="Ver solicitud" icon="ui-icon-search" actionListener="#{solicitudMB.showSolicitudAction(rowIndex)}"
+                                                 title="Ver la solicitud generada" oncomplete="PF('viewsolicituddlg').show()" update=":formviewsolicitud"></p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </p:tab>
+                    
+                    <p:tab title="Auditores Asignados">
+                        <f:facet name="title">
+                            <p:graphicImage value="./resources/images/auditor-asignado-icon.png" width="25" height="25"/>
+                            <p:spacer width="10" height="10"/>
+                            <h:outputText value="Auditores Asignados"/>
+                        </f:facet>
+                        
+                        <p:dataTable id="cmadt" var="auditoria" value="#{solicitudMB.auditorias}" 
+                                     paginator="true" rows="10"
+                             currentPageReportTemplate="Mostrando {startRecord}-{endRecord} de {totalRecords}"
+                             paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             rowsPerPageTemplate="5,10,15" paginatorPosition="bottom" styleClass="texto_tabla_pn" rowIndexVar="rowIndex" emptyMessage="Aun no tiene auditores asignados"
+                             selectionMode="single" selection="#{solicitudMB.selectedAuditoria}" rowKey="#{auditoria.id}">
+                            
+                            <p:column headerText="CÓDIGO CATASTRO" sortBy="#{auditoria.concesionMinera.codigo_arcom}" style="width:80px;text-align:right">
+                                <h:outputText  styleClass="texto_tabla_pn_codigo" value="#{auditoria.concesionMinera.codigo_arcom}" />
+                            </p:column>
+                            
+                            <p:column headerText="NOMBRE" sortBy="#{auditoria.concesionMinera.nombre_concesion}">
+                                <h:outputText value="#{auditoria.concesionMinera.nombre_concesion}"/>
+                            </p:column>
+                            
+                            <p:column headerText="AUDITOR DESIGNADO" sortBy="#{auditoria.auditor.razonSocial}">
+                                <h:outputText value="#{auditoria.auditor.razonSocial}"/>
+                            </p:column>
+                            
+                            <p:column headerText="TIPO DE AUDITORIA" sortBy="#{auditoria.tipoAuditoria}">
+                                <h:outputText value="#{auditoria.tipoAuditoria.nombre}"/>
+                            </p:column>
+                            
+                            <p:column headerText="FECHA ASIGNACIÓN" sortBy="#{auditoria.fechaDeAsignacion}" style="width:90px;text-align: center">
+                                <h:outputText value="#{auditoria.obtenerFecha()}"/> 
+                            </p:column>
+                            
+                            <p:column headerText="ESTADO" style="width:90px;text-align: center">
+                                <h:outputText value="#{auditoria.estadoAuditoria.nombre}"/> 
+                            </p:column>
+                            
+                            <p:column headerText="VER INFO" style="width:60px;text-align: center">
+                                <p:commandButton actionListener="#{solicitudMB.viewAsignedAuditor(rowIndex)}" icon="ui-icon-search" title="Ver Auditor"
+                                                 oncomplete="PF('viewauditordlg').show()" update=":viewauditor"></p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </p:tab>
+                    
+                    <p:tab title="Auditorias Finalizadas">
+                        <f:facet name="title">
+                            <p:graphicImage value="./resources/images/auditoria-end-icon.png" width="25" height="25"/>
+                            <p:spacer width="10" height="10"/>
+                            <h:outputText value="Auditorias Finalizadas"/>
+                        </f:facet>
+                        
+                        <p:dataTable id="finalizadasdt" var="finalizada" value="#{auditoriaMB.finalizadas}"
+                                     paginator="true" rows="10" 
+                                     currentPageReportTemplate="Mostrando {startRecord}-{endRecord} de {totalRecords}" 
+                                     paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     rowsPerPageTemplate="5,10,15" paginatorPosition="bottom" styleClass="texto_tabla_pn" rowIndexVar="rowIndex" 
+                                     emptyMessage="No tiene auditorias finalizadas">
+                            <p:column headerText="N°" style="width:20px;text-align:right">
+                                <h:outputText value="#{rowIndex + 1}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Código catastro" sortBy="#{finalizada.concesionMinera.codigo_arcom}" style="width:80px;text-align:center">
+                                <h:outputText  styleClass="texto_tabla_pn_codigo" value="#{finalizada.concesionMinera.codigo_arcom}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Nombre" sortBy="#{finalizada.concesionMinera.nombre_concesion}">
+                                <h:outputText value="#{finalizada.concesionMinera.nombre_concesion}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Documento Titular" sortBy="#{finalizada.documentoTitular}">
+                                <h:outputText value="#{finalizada.documentoTitular}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Titular">
+                                <h:outputText value="#{usuarioMB.obtenerNombreTitular(finalizada.documentoTitular)}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Auditor" sortBy="#{finalizada.auditor.razonSocial}">
+                                <h:outputText value="#{finalizada.auditor.razonSocial}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Tipo de Auditoria" sortBy="#{finalizada.tipoAuditoria}">
+                                <h:outputText value="#{finalizada.tipoAuditoria.nombre}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Fecha asignación" sortBy="#{finalizada.fechaDeAsignacion}" style="width:100px;text-align: center">
+                                <h:outputText value="#{finalizada.obtenerFecha()}"/> 
+                            </p:column>
+                            
+                            <p:column headerText="Estado" style="width:90px;text-align: center">
+                                <h:outputText value="#{finalizada.estadoAuditoria.nombre}"/> 
+                            </p:column>
+                            
+                            <p:column headerText="Accion" style="width:85px;text-align: center">
+                                <p:commandLink value="Ver Informe" ajax="false" styleClass="lnkadjuntos">
+                                    <p:fileDownload value="#{auditoriaMB.obtenerInfAuditoria(rowIndex)}" />
+                                </p:commandLink>
+                           </p:column>
+                        </p:dataTable>
+                   </p:tab>
+                </p:tabView>
+                
+                <!-- Dialogos de confirmacion -->
+                <p:confirmDialog id="infpconfdlg" showEffect="fade" hideEffect="fade" widgetVar="infpdlg" header="Confirmar designación"
+                                 message="#{solicitudMB.mensaje}">
+                    <p:commandButton value="Si" actionListener="#{solicitudMB.generarSolicitud()}" update=":growl tabulador tabulador:solicituddt" icon="ui-icon-check" oncomplete="PF('infpdlg').hide()"/>
+                    <p:commandButton value="No" icon="ui-icon-close" oncomplete="PF('infpdlg').hide()"/>
+                </p:confirmDialog>
+                
+                <p:confirmDialog id="infcataconfdlg" showEffect="fade" hideEffect="fade" widgetVar="catadlg" header="Confirmar designación"
+                                 message="#{solicitudMB.mensaje}">
+                    <p:commandButton value="Si" update="auditorform :growl" icon="ui-icon-check" oncomplete="PF('catadlg').hide()"/>
+                    <p:commandButton value="No" icon="ui-icon-close" oncomplete="PF('catadlg').hide()"/>
+                </p:confirmDialog>
+                
+                <p:confirmDialog id="infcatbconfdlg" showEffect="fade" hideEffect="fade" widgetVar="catbdlg" header="Confirmar designación"
+                                 message="#{solicitudMB.mensaje}">
+                    <p:commandButton value="Si" actionListener="#{solicitudMB.generarSolicitudCatB()}" update=":growl tabulador tabulador:solicituddt" icon="ui-icon-check" oncomplete="PF('catbdlg').hide()"/>
+                    <p:commandButton value="No" icon="ui-icon-close" oncomplete="PF('catbdlg').hide()"/>
+                </p:confirmDialog>
+                
+                <p:confirmDialog id="selectauditorconfdlg" showEffect="fade" hideEffect="fade" widgetVar="selectauditorconfdlgwidget" header="Confirmar selección"
+                                 message="¿Esta seguro de seleccionar este Auditor?">
+                    <p:commandButton value="Si" actionListener="#{solicitudMB.saveAuditorSelectedAction()}" update=":growl :auditorform:tabulador :auditorform:tabulador:solicituddt :auditorform:tabulador:cmadt"
+                                     icon="ui-icon-check" oncomplete="PF('selectauditorconfdlgwidget').hide();PF('viewauditoropcdlg').hide();PF('viewauditorlistdlg').hide();"/>
+                    <p:commandButton value="No" icon="ui-icon-close" oncomplete="PF('selectauditorconfdlgwidget').hide()"/>
+                </p:confirmDialog>
+            </h:form>
+            
+            <!-- Dialogo para seleccion de tipo de auditor -->
+            <p:dialog id="choosertipoauditor" widgetVar="choosertipoauditordlg" header="Seleccionar tipo de auditor" modal="true" 
+                      resizable="false" showEffect="clip" hideEffect="clip" width="410" height="160">
+                <h:form id="formchooser">
+                    <p:panelGrid styleClass="panelgridsinborde">
+                        <p:row>
+                            <p:column style="text-align: left">
+                                <p:outputLabel value="Seleccione el tipo de auditor a solicitar:"/>
+                            </p:column>
+                        </p:row>
+                        <p:row>
+                            <p:column>
+                                <p:selectOneMenu  id="somTipoAuditor" required="true" value="#{solicitudMB.selectedTipoAuditorValue}"
+                                                  converter="#{catalogoConverter}">
+                                    <f:selectItem itemLabel="Seleccione..." itemValue="#{null}" noSelectionOption="true"/>
+                                    <f:selectItems value="#{catalogMB.tiposAuditor}"
+                                               var="tipoauditor"
+                                               itemLabel="#{tipoauditor.nombre}"
+                                               itemValue="#{tipoauditor}"/>
+                                </p:selectOneMenu>
+                            </p:column>
+                        </p:row>
+                        
+                        <p:row>
+                            <p:column colspan="2" style="text-align: right">
+                                <p:commandButton value="Aceptar" actionListener="#{solicitudMB.selectTipoAuditor()}"
+                                                 update=":auditorform:infpconfdlg :auditorform:infcataconfdlg :auditorform:infcatbconfdlg"
+                                                 oncomplete="PF('choosertipoauditordlg').hide()"/>
+                            </p:column>
+                        </p:row>
+                    </p:panelGrid>
+                </h:form>
+            </p:dialog>
+            
+            <!-- Dialogo para visualizar la solicitud generada -->
+            <p:dialog id="viewsolicitud" widgetVar="viewsolicituddlg" header="Solicitud de auditor" modal="true" 
+                      resizable="false" showEffect="clip" hideEffect="clip">
+                <h:form id="formviewsolicitud">
+                    <br/>
+                    <p:outputLabel value="DERECHO MINERO" style="font-weight:bold"/>
+                    <br/>
+                    <p:outputLabel value="Código: " style="font-weight:bold"/>
+                    <p:outputLabel value="#{solicitudMB.selectedSolicitud.concesionMinera.codigo_arcom}"/>
+                    <br/>
+                    
+                    <p:outputLabel value="Nombre: " style="font-weight:bold"/>
+                    <p:outputLabel value="#{solicitudMB.selectedSolicitud.concesionMinera.nombre_concesion}"/>
+                    <br/>
+                    <br/>
+                    Usted puede seleccionar uno de los siguientes auditores:
+                    <br/>
+                    <p:panelGrid>
+                        <p:row>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:outputLabel value="OPCIONES" style="font-weight:bold"/>
+                            </p:column>
+                            <p:column style="text-align:center">
+                                <p:outputLabel value="RAZÓN SOCIAL" style="font-weight:bold"/>
+                            </p:column>
+                            <p:column style="text-align:center">
+                                <p:outputLabel value="VISUALIZAR" style="font-weight:bold"/>
+                            </p:column>
+                            <p:column style="text-align:center">
+                                <p:outputLabel value="ACCIÓN" style="font-weight:bold"/>
+                            </p:column>
+                        </p:row>
+                        
+                        <p:row>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:outputLabel value="1"/>
+                            </p:column>
+                            <p:column style="text-align:left">
+                                <p:outputLabel value="#{solicitudMB.selectedSolicitud.opcion1.razonSocial}"/>
+                            </p:column>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:commandButton icon="ui-icon-search" title="Ver Auditor" actionListener="#{solicitudMB.showOpcion1Action()}" oncomplete="PF('viewauditoropcdlg').show()" update=":viewauditoropc"/>
+                            </p:column>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:commandButton value="Seleccionar" icon="ui-icon-check" title="Seleccionar Auditor"
+                                                 update=":growl :auditorform:tabulador :auditorform:tabulador:solicituddt :auditorform:tabulador:cmadt"
+                                                 actionListener="#{solicitudMB.establecerAuditorSeleccionar(1)}" oncomplete="PF('viewsolicituddlg').hide(); PF('selectauditorconfdlgwidget').show()"/>
+                            </p:column>
+                        </p:row>
+                        
+                        <p:row>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:outputLabel value="2"/>
+                            </p:column>
+                            <p:column style="text-align:left">
+                                <p:outputLabel value="#{solicitudMB.selectedSolicitud.opcion2.razonSocial}"/>
+                            </p:column>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:commandButton icon="ui-icon-search" title="Ver Auditor" actionListener="#{solicitudMB.showOpcion2Action()}" oncomplete="PF('viewauditoropcdlg').show()" update=":viewauditoropc"/>
+                            </p:column>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:commandButton value="Seleccionar" icon="ui-icon-check" title="Seleccionar Auditor"
+                                                 update=":growl :auditorform:tabulador :auditorform:tabulador:solicituddt :auditorform:tabulador:cmadt"
+                                                 actionListener="#{solicitudMB.establecerAuditorSeleccionar(2)}" oncomplete="PF('viewsolicituddlg').hide(); PF('selectauditorconfdlgwidget').show()"/>
+                            </p:column>
+                        </p:row>
+                        
+                        <p:row>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:outputLabel value="3"/>
+                            </p:column>
+                            <p:column style="text-align:left">
+                                <p:outputLabel value="#{solicitudMB.selectedSolicitud.opcion3.razonSocial}"/>
+                            </p:column>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:commandButton icon="ui-icon-search" title="Ver Auditor" actionListener="#{solicitudMB.showOpcion3Action()}" oncomplete="PF('viewauditoropcdlg').show()" update=":viewauditoropc"/>
+                            </p:column>
+                            <p:column style="text-align:center; width:85px;">
+                                <p:commandButton value="Seleccionar" icon="ui-icon-check" title="Seleccionar Auditor"
+                                                 update=":growl :auditorform:tabulador :auditorform:tabulador:solicituddt :auditorform:tabulador:cmadt"
+                                                 actionListener="#{solicitudMB.establecerAuditorSeleccionar(3)}" oncomplete="PF('viewsolicituddlg').hide(); PF('selectauditorconfdlgwidget').show()"/>
+                            </p:column>
+                        </p:row>
+                    </p:panelGrid>
+                    <br/>
+                    <br/>
+                </h:form>
+            </p:dialog>
+            
+            <!-- Dialogo para visualizar uno de los auditores opcionales de la solicitud -->
+            <p:dialog id="viewauditoropc" widgetVar="viewauditoropcdlg" header="Información del Auditor" modal="true" 
+                      resizable="false" showEffect="clip" hideEffect="clip">
+                <br/>
+                <h:form>
+                <p:panelGrid>
+                    <f:facet name="header">
+                    </f:facet>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="RUC:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.ruc}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Razón social:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.razonSocial.toUpperCase()}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Nombre Representante Legal:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.nombreRepresentanteLegal.toUpperCase()}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Apellido Representante Legal:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.apellidoRepresentanteLegal.toUpperCase()}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Email:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.email}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Teléfono:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.telefonoFijo}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Celular:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.selectedAuditorSolicitud.telefonoMovil}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <f:facet name="footer">
+                    </f:facet>
+                </p:panelGrid>
+                    <p:commandButton value="Seleccionar" style="text-align: center"
+                                     oncomplete="PF('selectauditorconfdlgwidget').show()"/>  
+                </h:form>
+                <br/>
+            </p:dialog>
+            
+            <!-- Dialogo para visualizar el auditor asignado a la concesion -->
+            <p:dialog id="viewauditor" widgetVar="viewauditordlg" header="Información del Auditor" modal="true" 
+                      resizable="false" showEffect="clip" hideEffect="clip">
+                <br/>
+                <p:panelGrid>
+                    <f:facet name="header">
+                    </f:facet>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="RUC:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.ruc}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Razón social:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.razonSocial.toUpperCase()}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Nombre Representante Legal:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.nombreRepresentanteLegal.toUpperCase()}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Apellido Representante Legal:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.apellidoRepresentanteLegal.toUpperCase()}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Email:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.email}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Teléfono:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.telefonoFijo}"/>
+                        </p:column>
+                    </p:row>
+                    
+                    <p:row>
+                        <p:column style="text-align:right;">
+                            <h:outputLabel value="Celular:" styleClass="textonegrita"/>
+                        </p:column>
+                        <p:column style="text-align:left">
+                            <h:outputLabel value="#{solicitudMB.asignedAuditor.telefonoMovil}"/>
+                        </p:column>
+                    </p:row>
+
+                    <f:facet name="footer">
+                    </f:facet>
+                </p:panelGrid>
+                <br/>
+            </p:dialog>
+            
+            <!-- Dialogo para visualizar la lista de auditores calificados -->
+            <p:dialog id="viewauditorlist" widgetVar="viewauditorlistdlg" header="Lista de auditores calificados" modal="true" 
+                      resizable="false" showEffect="clip" hideEffect="clip" width="800" height="500">
+                <h:form id="formviewlist">
+                    <br/>
+                    Usted puede seleccionar uno de los siguientes auditores:
+                    <br/>
+                    <p:dataTable id="auddt" var="audtecmin" value="#{solicitudMB.auditoresCalificados}"
+                                 emptyMessage="No hay resultados..." paginator="true" rowIndexVar="row"
+                                 currentPageReportTemplate="Mostrando {startRecord}-{endRecord} de {totalRecords}" 
+                                 paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}" 
+                                 rowsPerPageTemplate="5,10,15" paginatorPosition="bottom" rows="10">
+                        
+                        <p:column headerText="RUC" sortBy="#{audtecmin.ruc}">
+                            <h:outputText  styleClass="texto_tabla_listas_admin_codigo" value="#{audtecmin.ruc}" />
+                        </p:column>
+                        
+                        <p:column headerText="Razón social" sortBy="#{audtecmin.razonSocial}">
+                            <h:outputText value="#{audtecmin.razonSocial.toUpperCase()}"/>
+                        </p:column>
+                        
+                        <p:column headerText="Provincia" sortBy="#{audtecmin.direccion.provincia}">
+                            <h:outputText value="#{audtecmin.direccion.provincia.nombre}"/>
+                        </p:column>
+                        
+                        <p:column headerText="Visualizar" style="text-align:center; width:85px;">
+                            <p:commandButton icon="ui-icon-search" title="Ver Auditor" actionListener="#{solicitudMB.showAuditorInfo(row)}"/>
+                        </p:column>
+                    </p:dataTable>
+                    <br/>
+                </h:form>
+            </p:dialog>
+            
+        </ui:define>
+    </ui:composition>
+</html>
+
